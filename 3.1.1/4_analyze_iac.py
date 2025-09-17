@@ -1,0 +1,199 @@
+import os
+import sys
+import csv
+import subprocess
+import tempfile
+import shutil
+import re
+import argparse
+
+def clone_repo(url, temp_dir):
+    repo_name = url.split('/')[-1].replace('.git', '')
+    repo_path = os.path.join(temp_dir, repo_name)
+    try:
+        subprocess.run(['git', 'clone', '--depth', '1', url, repo_path],
+                       check=True, capture_output=True, text=True)
+        return repo_path
+    except subprocess.CalledProcessError:
+        return None
+
+
+def analyze_file_common(content):
+    metrics = {
+        "lines_of_code": 0,
+        "url_count": 0,
+        "file_ref": 0
+    }
+
+    metrics["lines_of_code"] = len(content.split("\n"))
+    metrics["url_count"] = len(re.findall(r'https?://', content, re.IGNORECASE))
+
+    file_patterns = [
+        r'\b[\w\-/]+\.(pp|yaml|yml|json|conf|sh|py|cfg|ini|xml|txt)\b',
+        r'\btemplate\s*\(\s*[\'"][^\'"]+[\'"]\s*\)',
+        r'\bsource\s*=>\s*[\'"][^\'"]+[\'"]'
+    ]
+    for pattern in file_patterns:
+        metrics["file_ref"] += len(re.findall(pattern, content, re.IGNORECASE))
+
+    return metrics
+
+
+def count_ssh_keys_simple(content):
+    
+    restrictive_patterns = [
+        r'\.ssh/',
+        r'\bssh_private_key\b',
+        r'\bknown_hosts\b',
+        r'ssh::known_host',
+    ]
+    
+    found_elements = set()
+    for pattern in restrictive_patterns:
+        matches = re.findall(pattern, content, re.IGNORECASE)
+        for match in matches:
+            found_elements.add(match.lower().strip())
+    
+    return len(found_elements)
+
+
+def analyze_puppet_file(file_path):
+    metrics = {
+        'require': 0, 'ensure': 0, 'include': 0, 'attribute': 0,
+        'hard_coded_string': 0, 'comment': 0, 'command': 0,
+        'file_mode': 0, 'ssh_key': 0
+    }
+
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+
+        metrics['require'] = len(re.findall(r'\brequire\s*=>', content, re.IGNORECASE))
+        metrics['ensure'] = len(re.findall(r'\bensure\s*=>', content, re.IGNORECASE))
+        metrics['include'] = len(re.findall(r'\binclude\s+[\w:]+', content, re.IGNORECASE))
+        metrics['attribute'] = len(re.findall(r'^\s*\w+\s*=>\s*[^,\n}]+', content, re.MULTILINE))
+        metrics['hard_coded_string'] = len(re.findall(r"'[^']+'|\"[^\"]+\"", content))
+        metrics['comment'] = len(re.findall(r'#.*', content))
+
+        command_patterns = [
+            r'\bcommand\s*=>\s*["\'].*?["\']',
+            r'\bexec\s*\{.*?\}',
+            r'`[^`]+`',
+            r'system\s*\('
+        ]
+        metrics['command'] = sum(len(re.findall(p, content, re.IGNORECASE)) for p in command_patterns)
+        metrics['file_mode'] = len(re.findall(r'\bmode\s*=>\s*[\'"]?[0-7]+[\'"]?', content))
+
+        metrics['ssh_key'] = count_ssh_keys_simple(content)
+
+        common = analyze_file_common(content)
+        metrics.update(common)
+
+    except Exception as e:
+        print(f"Erreur lors de l'analyse Puppet {file_path}: {e}")
+
+    return metrics
+
+
+def calculate_defect_status(metrics):
+    defect_indicators = 0
+    if metrics['hard_coded_string'] > 10:
+        defect_indicators += 1
+    if metrics['command'] > 5:
+        defect_indicators += 1
+    if metrics['ssh_key'] > 0 and metrics['file_mode'] == 0:
+        defect_indicators += 1
+    if metrics['lines_of_code'] > 200:
+        defect_indicators += 1
+    if metrics['attribute'] > 50:
+        defect_indicators += 1
+    return 1 if defect_indicators >= 2 else 0
+
+
+def analyze_repository(repo_path, org_name, repo_name):
+    results = []
+    for root, _, files in os.walk(repo_path):
+        for file in files:
+            should_analyze = False
+            if file.endswith('.pp'):
+                should_analyze = True
+                file_type = 'puppet'
+
+            if should_analyze:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, repo_path)
+
+                metrics = analyze_puppet_file(file_path)
+                defect_status = calculate_defect_status(metrics)
+
+                result = {
+                    'org': org_name.upper(),
+                    'file_': repo_name + "/" + rel_path,
+                    'URL': metrics['url_count'],
+                    'File': metrics['file_ref'],
+                    'Lines_of_code': metrics['lines_of_code'] - 1,
+                    'Require': metrics['require'],
+                    'Ensure': metrics['ensure'],
+                    'Include': metrics['include'],
+                    'Attribute': metrics['attribute'],
+                    'Hard_coded_string': metrics['hard_coded_string'],
+                    'Comment': metrics['comment'],
+                    'Command': metrics['command'],
+                    'File_mode': metrics['file_mode'],
+                    'SSH_KEY': metrics['ssh_key'],
+                    'defect_status': defect_status
+                }
+                results.append(result)
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Analyse les défauts IaC dans les repositories')
+    parser.add_argument('--csv', required=True, help='Fichier CSV des repos IaC actifs')
+    parser.add_argument('--org', required=True, help="Nom de l'organisation")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.csv):
+        print(f"Fichier d'entrée non trouvé: {args.csv}")
+        sys.exit(1)
+
+    all_results = []
+    temp_dir = tempfile.mkdtemp()
+    output_file = f"final/defects_{args.org.lower()}.csv"
+
+    try:
+        with open(args.csv, 'r', newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                repo_name = row['name']
+                clone_url = row['clone_url']
+                print(f"Analyse du repository: {repo_name}")
+
+                repo_path = clone_repo(clone_url, temp_dir)
+                if repo_path:
+                    repo_results = analyze_repository(repo_path, args.org, repo_name)
+                    all_results.extend(repo_results)
+                    print(f"  → {len(repo_results)} fichiers IaC analysés")
+                else:
+                    print(f"  → Erreur lors du clonage de {repo_name}")
+
+        fieldnames = ['org', 'file_', 'URL', 'File', 'Lines_of_code', 'Require', 'Ensure',
+                      'Include', 'Attribute', 'Hard_coded_string', 'Comment', 'Command',
+                      'File_mode', 'SSH_KEY', 'defect_status']
+
+        with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(all_results)
+
+        print(f"\nAnalyse terminée!")
+        print(f"Nombre total de fichiers analysés: {len(all_results)}")
+        print(f"Fichiers avec défauts détectés: {sum(1 for r in all_results if r['defect_status'] == 1)}")
+        print(f"Résultats sauvegardés dans: {output_file}")
+
+    finally:
+        shutil.rmtree(temp_dir)
+
+
+if __name__ == "__main__":
+    main()

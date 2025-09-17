@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Output files
+3.1.1/activity/*
+!3.1.1/activity/.gitkeep
+3.1.1/downloadable/*
+!3.1.1/downloadable/.gitkeep
+3.1.1/final/*
+!3.1.1/final/.gitkeep
+3.1.1/iac_filter/*
+!3.1.1/iac_filter/.gitkeep

@@ -24,14 +24,14 @@ def is_active_repo(clone_url, min_commits_per_month=MIN_COMMITS_PER_MONTH, retry
             stderr = e.stderr.lower()
             if "authentication" in stderr or "permission denied" in stderr:
                 if retry_on_auth:
-                    print(f"Problème d'authentification pour {clone_url}. Attente 10s avant réessai...")
+                    print(f"Authentication issue for {clone_url}. Waiting 10s before retry...")
                     time.sleep(10)
                     return is_active_repo(clone_url, min_commits_per_month, retry_on_auth=False)
                 else:
-                    print(f"Échec d'authentification répété pour {clone_url}")
+                    print(f"Repeated authentication failure for {clone_url}")
                     return False
             else:
-                print(f"Erreur Git pour {clone_url}: {e.stderr.strip()}")
+                print(f"Git error for {clone_url}: {e.stderr.strip()}")
                 return False
 
         result = subprocess.run(
@@ -41,7 +41,7 @@ def is_active_repo(clone_url, min_commits_per_month=MIN_COMMITS_PER_MONTH, retry
         
         dates = [datetime.fromisoformat(d.strip()).replace(tzinfo=None) for d in result.stdout.splitlines()]
         if not dates:
-            print(f"Aucun commit trouvé pour {clone_url}")
+            print(f"No commits found for {clone_url}")
             return False
 
         counter = Counter((d.year, d.month) for d in dates)
@@ -53,7 +53,7 @@ def is_active_repo(clone_url, min_commits_per_month=MIN_COMMITS_PER_MONTH, retry
         
         while current <= last:
             if counter.get((current.year, current.month), 0) < min_commits_per_month:
-                print(f"{clone_url} inactif en {current.year}-{current.month}")
+                print(f"{clone_url} inactive in {current.year}-{current.month}")
                 return False
             
             if current.month == 12:
@@ -67,11 +67,11 @@ def is_active_repo(clone_url, min_commits_per_month=MIN_COMMITS_PER_MONTH, retry
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Filtrer les repos actifs")
+    parser = argparse.ArgumentParser(description="Filter active repositories")
     parser.add_argument("--in", dest="input_csv", default="iac_repos.csv",
-                        help="Nom du CSV d'entrée (par défaut: iac_repos.csv)")
+                        help="Input CSV filename (default: iac_repos.csv)")
     parser.add_argument("--out", dest="output_csv", default="iac_repos_active.csv",
-                        help="Nom du CSV de sortie (par défaut: iac_repos_active.csv)")
+                        help="Output CSV filename (default: iac_repos_active.csv)")
     
     args = parser.parse_args()
     

@@ -83,11 +83,11 @@ def process_repo(clone_url, retries=2):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Filtrer les repos IaC")
+    parser = argparse.ArgumentParser(description="Filter IaC repositories")
     parser.add_argument("--in", dest="input_csv", default="repos.csv",
-                        help="Nom du CSV d'entrée (par défaut: repos.csv)")
+                        help="Input CSV filename (default: repos.csv)")
     parser.add_argument("--out", dest="output_csv", default="iac_repos.csv",
-                        help="Nom du CSV de sortie (par défaut: iac_repos.csv)")
+                        help="Output CSV filename (default: iac_repos.csv)")
     
     args = parser.parse_args()
     
@@ -111,4 +111,4 @@ if __name__ == "__main__":
             if keep:
                 writer.writerow([name, url])
             
-            print(f"{name}: {iac}/{total} fichiers IaC ({round(ratio, 2)}%) -> {'keep' if keep else 'discard'}")
+            print(f"{name}: {iac}/{total} IaC files ({round(ratio, 2)}%) -> {'keep' if keep else 'discard'}")

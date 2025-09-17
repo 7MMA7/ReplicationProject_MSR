@@ -25,7 +25,7 @@ class GitHubAPIManager:
     
     def _rotate_key(self):
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
-        print(f"Rotation vers clé {self.current_key_index + 1}")
+        print(f"Rotating to key {self.current_key_index + 1}")
     
     def make_request(self, url, params=None, max_retries=3):
         for attempt in range(max_retries):
@@ -36,20 +36,20 @@ class GitHubAPIManager:
                     return response.json()
                 elif response.status_code == 403:
                     if 'rate limit' in response.text.lower():
-                        print(f"Rate limit atteinte pour clé {self.current_key_index + 1}")
+                        print(f"Rate limit reached for key {self.current_key_index + 1}")
                         self._rotate_key()
                         time.sleep(1)
                         continue
                 elif response.status_code == 401:
-                    print(f"Clé invalide {self.current_key_index + 1}")
+                    print(f"Invalid key {self.current_key_index + 1}")
                     self._rotate_key()
                     continue
                 else:
-                    print(f"Erreur HTTP {response.status_code}: {response.text}")
+                    print(f"HTTP Error {response.status_code}: {response.text}")
                     return None
                     
             except Exception as e:
-                print(f"Erreur requête: {e}")
+                print(f"Request error: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(2)
                     continue

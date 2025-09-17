@@ -9,10 +9,10 @@ def run_script(script_name, args=None):
     
     try:
         subprocess.run(cmd, check=True)
-        print(f"{script_name} terminé avec succès")
+        print(f"{script_name} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Erreur dans {script_name}: {e}")
+        print(f"Error in {script_name}: {e}")
         return False
 
 def get_org_name_from_url(url):
@@ -27,27 +27,27 @@ if __name__ == "__main__":
     github_url = sys.argv[1]
     org_name = get_org_name_from_url(github_url)
     
-    repos_csv = f"downloadable/repos_{org_name}.csv"
-    iac_csv = f"iac_filter/iac_repos_{org_name}.csv"
-    iac_active_csv = f"activity/iac_repos_active_{org_name}.csv"
+    repos_csv = f"3.1.1/downloadable/repos_{org_name}.csv"
+    iac_csv = f"3.1.1/iac_filter/iac_repos_{org_name}.csv"
+    iac_active_csv = f"3.1.1/activity/iac_repos_active_{org_name}.csv"
+    final_csv = f"3.1.1/final/defects_{org_name}.csv"
     
     scripts = [
-        ("1_check_repos.py", [github_url, "--out", repos_csv]),
-        ("2_filter_iac.py", ["--in", repos_csv, "--out", iac_csv]),
-        ("3_filter_activity.py", ["--in", iac_csv, "--out", iac_active_csv]),
-        ("4_analyze_iac.py", ["--csv", iac_active_csv, "--org", org_name])
+        ("3.1.1/1_check_repos.py", [github_url, "--out", repos_csv]),
+        ("3.1.1/2_filter_iac.py", ["--in", repos_csv, "--out", iac_csv]),
+        ("3.1.1/3_filter_activity.py", ["--in", iac_csv, "--out", iac_active_csv]),
+        ("3.1.1/4_analyze_iac.py", ["--in", iac_active_csv, "--out", final_csv])
     ]
     
-    print("Démarrage du pipeline de traitement des repos GitHub")
-    print(f"URL cible: {github_url}")
+    print("Starting the GitHub repos processing pipeline")
+    print(f"Target URL: {github_url}")
     print("-" * 50)
     
     for script_name, args in scripts:
-        print(f"Exécution de {script_name}...")
+        print(f"Running {script_name}...")
         if not run_script(script_name, args):
-            print(f"Arrêt du pipeline à cause de l'erreur dans {script_name}")
+            print(f"Stopping the pipeline due to error in {script_name}")
             sys.exit(1)
         print()
     
-    print("Pipeline terminé avec succès!")
-    print(f"Fichier final: {iac_active_csv}")
+    print("Pipeline completed")

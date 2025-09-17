@@ -60,7 +60,7 @@ def analyze_puppet_file(file_path):
         metrics['ssh_key'] = len(re.findall(r'\bssh_authorized_key\b', content, re.IGNORECASE))
 
     except Exception as e:
-        print(f"Erreur lors de l'analyse Puppet {file_path}: {e}")
+        print(f"Error analyzing Puppet file {file_path}: {e}")
 
     return metrics
 
@@ -118,48 +118,44 @@ def analyze_repository(repo_path, org_name, repo_name):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyse les défauts IaC dans les repositories')
-    parser.add_argument('--csv', required=True, help='Fichier CSV des repos IaC actifs')
-    parser.add_argument('--org', required=True, help="Nom de l'organisation")
+    parser = argparse.ArgumentParser(description='Analyze IaC defects in repositories')
+    parser.add_argument('--in', dest="input", required=True, help='CSV file of active IaC repos')
+    parser.add_argument('--out', dest="output", required=True, help="Output CSV file for results")
     args = parser.parse_args()
 
-    if not os.path.exists(args.csv):
-        print(f"Fichier d'entrée non trouvé: {args.csv}")
+    if not os.path.exists(args.input):
+        print(f"Input file not found: {args.input}")
         sys.exit(1)
 
     all_results = []
     temp_dir = tempfile.mkdtemp()
-    output_file = f"final/defects_{args.org.lower()}.csv"
 
     try:
-        with open(args.csv, 'r', newline='', encoding='utf-8') as csvfile:
+        with open(args.input, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 repo_name = row['name']
                 clone_url = row['clone_url']
-                print(f"Analyse du repository: {repo_name}")
+                print(f"Analyzing repository: {repo_name}")
 
                 repo_path = clone_repo(clone_url, temp_dir)
                 if repo_path:
                     repo_results = analyze_repository(repo_path, args.org, repo_name)
                     all_results.extend(repo_results)
-                    print(f"  → {len(repo_results)} fichiers IaC analysés")
+                    print(f"  → {len(repo_results)} IaC files analyzed")
                 else:
-                    print(f"  → Erreur lors du clonage de {repo_name}")
+                    print(f"  → Error cloning {repo_name}")
 
         fieldnames = ['org', 'file_', 'URL', 'File', 'Lines_of_code', 'Require', 'Ensure',
                       'Include', 'Attribute', 'Hard_coded_string', 'Comment', 'Command',
                       'File_mode', 'SSH_KEY', 'defect_status']
 
-        with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+        with open(args.output, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(all_results)
 
-        print(f"\nAnalyse terminée!")
-        print(f"Nombre total de fichiers analysés: {len(all_results)}")
-        print(f"Fichiers avec défauts détectés: {sum(1 for r in all_results if r['defect_status'] == 1)}")
-        print(f"Résultats sauvegardés dans: {output_file}")
+        print(f"Total files analyzed: {len(all_results)}")
 
     finally:
         shutil.rmtree(temp_dir)

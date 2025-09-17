@@ -17,28 +17,6 @@ def clone_repo(url, temp_dir):
     except subprocess.CalledProcessError:
         return None
 
-
-def analyze_file_common(content):
-    metrics = {
-        "lines_of_code": 0,
-        "url_count": 0,
-        "file_ref": 0
-    }
-
-    metrics["lines_of_code"] = len(content.split("\n"))
-    metrics["url_count"] = len(re.findall(r'https?://', content, re.IGNORECASE))
-
-    file_patterns = [
-        r'\b[\w\-/]+\.(pp|yaml|yml|json|conf|sh|py|cfg|ini|xml|txt)\b',
-        r'\btemplate\s*\(\s*[\'"][^\'"]+[\'"]\s*\)',
-        r'\bsource\s*=>\s*[\'"][^\'"]+[\'"]'
-    ]
-    for pattern in file_patterns:
-        metrics["file_ref"] += len(re.findall(pattern, content, re.IGNORECASE))
-
-    return metrics
-
-
 def count_ssh_keys_simple(content):
     
     restrictive_patterns = [
@@ -61,33 +39,25 @@ def analyze_puppet_file(file_path):
     metrics = {
         'require': 0, 'ensure': 0, 'include': 0, 'attribute': 0,
         'hard_coded_string': 0, 'comment': 0, 'command': 0,
-        'file_mode': 0, 'ssh_key': 0
+        'file_mode': 0, 'ssh_key': 0, 'file': 0, 'url_count': 0, 'lines_of_code': 0
     }
 
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
 
-        metrics['require'] = len(re.findall(r'\brequire\s*=>', content, re.IGNORECASE))
-        metrics['ensure'] = len(re.findall(r'\bensure\s*=>', content, re.IGNORECASE))
+        metrics['lines_of_code'] = len(content.splitlines())
+        metrics['url_count'] = len(re.findall(r'https?://', content, re.IGNORECASE))
+        metrics['require'] = len(re.findall(r'\brequire\b', content, re.IGNORECASE))
+        metrics['ensure'] = len(re.findall(r'\bensure\b', content, re.IGNORECASE))
         metrics['include'] = len(re.findall(r'\binclude\s+[\w:]+', content, re.IGNORECASE))
-        metrics['attribute'] = len(re.findall(r'^\s*\w+\s*=>\s*[^,\n}]+', content, re.MULTILINE))
+        metrics['attribute'] = len(re.findall(r'\b\w+\s*=>', content))  # more general
         metrics['hard_coded_string'] = len(re.findall(r"'[^']+'|\"[^\"]+\"", content))
         metrics['comment'] = len(re.findall(r'#.*', content))
-
-        command_patterns = [
-            r'\bcommand\s*=>\s*["\'].*?["\']',
-            r'\bexec\s*\{.*?\}',
-            r'`[^`]+`',
-            r'system\s*\('
-        ]
-        metrics['command'] = sum(len(re.findall(p, content, re.IGNORECASE)) for p in command_patterns)
+        metrics['command'] = len(re.findall(r'\bcmd\b', content, re.IGNORECASE))
+        metrics['file'] = len(re.findall(r'\bfile\b', content, re.IGNORECASE))
         metrics['file_mode'] = len(re.findall(r'\bmode\s*=>\s*[\'"]?[0-7]+[\'"]?', content))
-
-        metrics['ssh_key'] = count_ssh_keys_simple(content)
-
-        common = analyze_file_common(content)
-        metrics.update(common)
+        metrics['ssh_key'] = len(re.findall(r'\bssh_authorized_key\b', content, re.IGNORECASE))
 
     except Exception as e:
         print(f"Erreur lors de l'analyse Puppet {file_path}: {e}")
@@ -130,8 +100,8 @@ def analyze_repository(repo_path, org_name, repo_name):
                     'org': org_name.upper(),
                     'file_': repo_name + "/" + rel_path,
                     'URL': metrics['url_count'],
-                    'File': metrics['file_ref'],
-                    'Lines_of_code': metrics['lines_of_code'] - 1,
+                    'File': metrics['file'],
+                    'Lines_of_code': metrics['lines_of_code'],
                     'Require': metrics['require'],
                     'Ensure': metrics['ensure'],
                     'Include': metrics['include'],

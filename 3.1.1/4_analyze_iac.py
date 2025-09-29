@@ -121,6 +121,7 @@ def main():
     parser = argparse.ArgumentParser(description='Analyze IaC defects in repositories')
     parser.add_argument('--in', dest="input", required=True, help='CSV file of active IaC repos')
     parser.add_argument('--out', dest="output", required=True, help="Output CSV file for results")
+    parser.add_argument('--org', dest="org", required=False, default="", help="Organization name for labeling")
     args = parser.parse_args()
 
     if not os.path.exists(args.input):

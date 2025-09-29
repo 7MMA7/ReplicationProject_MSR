@@ -36,7 +36,7 @@ if __name__ == "__main__":
         ("3.1.1/1_check_repos.py", [github_url, "--out", repos_csv]),
         ("3.1.1/2_filter_iac.py", ["--in", repos_csv, "--out", iac_csv]),
         ("3.1.1/3_filter_activity.py", ["--in", iac_csv, "--out", iac_active_csv]),
-        ("3.1.1/4_analyze_iac.py", ["--in", iac_active_csv, "--out", final_csv])
+        ("3.1.1/4_analyze_iac.py", ["--in", iac_active_csv, "--out", final_csv, "--org", org_name])
     ]
     
     print("Starting the GitHub repos processing pipeline")

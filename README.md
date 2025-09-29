@@ -2,6 +2,7 @@
 
 ## Project structure
 
+```
 ReplicationProject_MSR
 │── requirements.txt
 │── 3.1.1/
@@ -28,6 +29,7 @@ ReplicationProject_MSR
 │   ├── median_values_defect_status.py
 │   └── statistical_validation_analysis.py
 └── .env
+```
 
 ## Installation
 

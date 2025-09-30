@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 ## Environment variables
 
-Create a `.env` file in the root directory of the project, add your GitHub api keys and your phabricator token as follows:
+Create a `.env` file in the root directory of the project, add your GitHub api keys and your Conduit api token (for Phabricator Wikimedia) as follows:
 
 ```
 GITHUB_API_KEY_1=your_key_1
@@ -58,7 +58,7 @@ GITHUB_API_KEY_4=your_key_4
 GITHUB_API_KEY_5=your_key_5
 PHABRICATOR_TOKEN=your_phabricator_token
 ```
-
+*Note: to Generate the Conduit API Token for calling the issue tracker Phabricator, create an account in [Phabricator](https://phabricator.wikimedia.org/conduit/login/) and look for the **Conduit API tokens** section in the settings.*
 ## Usage
 
 Every command line instruction should be run from the root directory of the project. You can adjust the paths in the commands as needed.

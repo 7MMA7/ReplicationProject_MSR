@@ -16,6 +16,13 @@ ReplicationProject_MSR
 │   ├── 2_filter_iac.py
 │   ├── 3_filter_activity.py
 │   └── 4_analyze_iac.py
+|── 3.1.2/
+|   ├── results/
+|   ├── process.py
+|   ├── github_commit_extraction.py
+|   ├── github_repos_extraction.py
+|   ├── tracker_issue_mining.py
+|   ├── xcm_generator.py
 │── data/
 │   ├── IST_MIR.csv
 │   ├── IST_MOZ.csv
@@ -41,7 +48,7 @@ pip install -r requirements.txt
 
 ## Environment variables
 
-Create a `.env` file in the root directory of the project and add your GitHub api keys as follows:
+Create a `.env` file in the root directory of the project, add your GitHub api keys and your phabricator token as follows:
 
 ```
 GITHUB_API_KEY_1=your_key_1
@@ -49,6 +56,7 @@ GITHUB_API_KEY_2=your_key_2
 GITHUB_API_KEY_3=your_key_3
 GITHUB_API_KEY_4=your_key_4
 GITHUB_API_KEY_5=your_key_5
+PHABRICATOR_TOKEN=your_phabricator_token
 ```
 
 ## Usage
@@ -90,6 +98,24 @@ Alternatively, you can run each step of the pipeline separately:
     python3 3.1.1/4_analyze_iac.py --in [INPUT_CSV] --out [OUTPUT_CSV] --org [ORG_NAME]
     ```
     with `[INPUT_CSV]` being the path to the CSV file generated in step 3, `[OUTPUT_CSV]` being the path where you want to save the final analysis results, and `[ORG_NAME]` being the name of the GitHub organization.
+
+### 3.1.2 Replication
+To run the full process, execute the following command:
+```bash
+python3 3.1.2/process.py
+```
+
+Alternatively, you can run manually the two steps of the process:
+
+1. Extract the name of the repositories and files in CSV files:
+```bash
+python3 3.1.2/github_repos_extraction.py
+```
+
+2. Generate the Extended Commit Messages (XCM) for the extracted repositories:
+```bash
+python3 3.1.2/xcm_generator
+```
 
 ### Research Question 1 Analysis
 

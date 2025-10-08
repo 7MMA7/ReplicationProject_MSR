@@ -165,11 +165,11 @@ To replicate the analysis for Research Question 1, run the following commands:
 1. The `merge_csv.py` file is used to merge all four given csv data files into one csv to facilitate processing data afterward. The `merge_data.csv` file is the result of this script and can be re-generated with the following :
 
     ```bash
-    python3 RQ_3/merge_data.py
+    python3 RQ_3/merge_csv.py
     ```
 
 2. The `iac_defect_prediction.py` is used to reproduce, in one execution, all the operations mentioned in part 3.5.1 to 3.5.3 of the paper and save the results in `method_evaluation.txt`. The file can be re-generated using the following :
 
     ```bash
-    python3 RQ_3/iac_defect_prediction.py data\merged_data.csv --label defect_status > method_evaluation.txt
+    python3 RQ_3/iac_defect_prediction.py data/merged_data.csv --label defect_status > method_evaluation.txt
     ```

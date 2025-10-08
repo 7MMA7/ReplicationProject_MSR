@@ -1,0 +1,13 @@
+Property,Mirantis_avg,Mirantis_max,Mozilla_avg,Mozilla_max,Openstack_avg,Openstack_max,Wikimedia_avg,Wikimedia_max
+URL,0.5,9,1.4,31,0.8,21,0.4,6
+File,1.5,25,0.8,10,0.4,15,1.4,27
+Require,2.0,35,0.7,9,0.5,20,1.2,11
+Ensure,3.0,42,1.3,22,1.1,55,1.5,28
+Include,5.7,70,4.9,129,2.7,57,4.1,29
+Attribute,26.2,249,11.7,229,15.2,283,12.6,232
+Hard coded string,19.8,203,7.2,364,10.8,212,9.8,235
+Command,0.4,6,0.4,6,0.3,8,0.4,4
+File mode,1.2,17,0.6,12,0.2,11,0.7,18
+SSH KEY,1.2,17,0.6,12,0.3,11,0.7,18
+Lines of code,97.6,1287,52.2,1157,88.3,1222,58.9,464
+Comment,16.2,128,4.1,121,33.6,623,13.9,130

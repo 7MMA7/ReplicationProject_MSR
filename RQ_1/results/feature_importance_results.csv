@@ -1,0 +1,13 @@
+Rank,Mirantis,Mozilla,Openstack,Wikimedia
+1,Hard-coded string (0.20),Lines of code (0.27),Lines of code (0.26),Lines of code (0.22)
+2,Lines of code (0.19),Attribute (0.17),Hard-coded string (0.18),Attribute (0.17)
+3,Attribute (0.14),Hard-coded string (0.14),Attribute (0.16),Hard-coded string (0.16)
+4,Comment (0.12),Include (0.13),Comment (0.16),Comment (0.11)
+5,Include (0.08),Ensure (0.05),Include (0.09),Include (0.09)
+6,Ensure (0.07),Comment (0.05),URL (0.04),File (0.07)
+7,File mode (0.05),File (0.04),Ensure (0.04),Ensure (0.05)
+8,Require (0.04),Require (0.04),Command (0.02),URL (0.04)
+9,SSH KEY (0.04),URL (0.04),Require (0.02),Require (0.04)
+10,File (0.03),File mode (0.03),File (0.02),Command (0.03)
+11,Command (0.02),Command (0.03),SSH KEY (0.01),File mode (0.02)
+12,URL (0.02),SSH KEY (0.03),File mode (0.01),SSH KEY (0.01)

@@ -17,24 +17,6 @@ def clone_repo(url, temp_dir):
     except subprocess.CalledProcessError:
         return None
 
-def count_ssh_keys_simple(content):
-    
-    restrictive_patterns = [
-        r'\.ssh/',
-        r'\bssh_private_key\b',
-        r'\bknown_hosts\b',
-        r'ssh::known_host',
-    ]
-    
-    found_elements = set()
-    for pattern in restrictive_patterns:
-        matches = re.findall(pattern, content, re.IGNORECASE)
-        for match in matches:
-            found_elements.add(match.lower().strip())
-    
-    return len(found_elements)
-
-
 def analyze_puppet_file(file_path):
     metrics = {
         'require': 0, 'ensure': 0, 'include': 0, 'attribute': 0,
@@ -51,7 +33,7 @@ def analyze_puppet_file(file_path):
         metrics['require'] = len(re.findall(r'\brequire\b', content, re.IGNORECASE))
         metrics['ensure'] = len(re.findall(r'\bensure\b', content, re.IGNORECASE))
         metrics['include'] = len(re.findall(r'\binclude\s+[\w:]+', content, re.IGNORECASE))
-        metrics['attribute'] = len(re.findall(r'\b\w+\s*=>', content))  # more general
+        metrics['attribute'] = len(re.findall(r'\b\w+\s*=>', content))
         metrics['hard_coded_string'] = len(re.findall(r"'[^']+'|\"[^\"]+\"", content))
         metrics['comment'] = len(re.findall(r'#.*', content))
         metrics['command'] = len(re.findall(r'\bcmd\b', content, re.IGNORECASE))
@@ -64,37 +46,15 @@ def analyze_puppet_file(file_path):
 
     return metrics
 
-
-def calculate_defect_status(metrics):
-    defect_indicators = 0
-    if metrics['hard_coded_string'] > 10:
-        defect_indicators += 1
-    if metrics['command'] > 5:
-        defect_indicators += 1
-    if metrics['ssh_key'] > 0 and metrics['file_mode'] == 0:
-        defect_indicators += 1
-    if metrics['lines_of_code'] > 200:
-        defect_indicators += 1
-    if metrics['attribute'] > 50:
-        defect_indicators += 1
-    return 1 if defect_indicators >= 2 else 0
-
-
 def analyze_repository(repo_path, org_name, repo_name):
     results = []
     for root, _, files in os.walk(repo_path):
         for file in files:
-            should_analyze = False
             if file.endswith('.pp'):
-                should_analyze = True
-                file_type = 'puppet'
-
-            if should_analyze:
                 file_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_path, repo_path)
 
                 metrics = analyze_puppet_file(file_path)
-                defect_status = calculate_defect_status(metrics)
 
                 result = {
                     'org': org_name.upper(),
@@ -110,15 +70,13 @@ def analyze_repository(repo_path, org_name, repo_name):
                     'Comment': metrics['comment'],
                     'Command': metrics['command'],
                     'File_mode': metrics['file_mode'],
-                    'SSH_KEY': metrics['ssh_key'],
-                    'defect_status': defect_status
+                    'SSH_KEY': metrics['ssh_key']
                 }
                 results.append(result)
     return results
 
-
 def main():
-    parser = argparse.ArgumentParser(description='Analyze IaC defects in repositories')
+    parser = argparse.ArgumentParser(description='Analyze IaC repositories (without defect status)')
     parser.add_argument('--in', dest="input", required=True, help='CSV file of active IaC repos')
     parser.add_argument('--out', dest="output", required=True, help="Output CSV file for results")
     parser.add_argument('--org', dest="org", required=False, default="", help="Organization name for labeling")
@@ -149,7 +107,7 @@ def main():
 
         fieldnames = ['org', 'file_', 'URL', 'File', 'Lines_of_code', 'Require', 'Ensure',
                       'Include', 'Attribute', 'Hard_coded_string', 'Comment', 'Command',
-                      'File_mode', 'SSH_KEY', 'defect_status']
+                      'File_mode', 'SSH_KEY']
 
         with open(args.output, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -160,7 +118,6 @@ def main():
 
     finally:
         shutil.rmtree(temp_dir)
-
 
 if __name__ == "__main__":
     main()

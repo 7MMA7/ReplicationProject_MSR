@@ -215,7 +215,8 @@ __marimo__/
 !3.1.1/final/.gitkeep
 3.1.1/iac_filter/*
 !3.1.1/iac_filter/.gitkeep
-3.1.2/results/*
+3.1.2/results/IaC_files.csv
+3.1.2/results/IaC_repos.csv
 !3.1.2/results/.gitkeep
 RQ_1/results/*
 !RQ_1/results/.gitkeep

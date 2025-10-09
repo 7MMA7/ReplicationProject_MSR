@@ -20,7 +20,6 @@ def xcm_gnerator():
    # Configuration for API calls
    base_url = "https://api.github.com/repos/"
    org_names = ["Mirantis", "mozilla", "openstack", "wikimedia"]
-   git_token = os.getenv("GITHUB_API_KEY_1")
 
    for org_name in org_names:
       # Iterate through each repository in the current organization

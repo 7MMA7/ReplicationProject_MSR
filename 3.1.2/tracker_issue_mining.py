@@ -51,7 +51,8 @@ def get_issue_phabricator(issue_id):
     response = requests.post(url, headers=headers, data=payload)
     if response.status_code == 200:
         data = response.json()
-        return data['result']['data'][0]['fields']['description']['raw']
+        if data['result']['data']:
+            return data['result']['data'][0]['fields']['description']['raw']
     else:
         print(f"Error - Failed to make API call for issue tracking: {response.status_code} - {response.text}")
 
